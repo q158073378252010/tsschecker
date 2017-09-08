@@ -10,15 +10,37 @@ AC_CONFIG_HEADERS([config.h])
 AC_PROG_CC
 CFLAGS+=" -std=c11"
 AC_PROG_INSTALL
+AC_PROG_LIBTOOL
+
+AC_CONFIG_MACRO_DIRS([m4])
 
 # Checks for libraries.
 
-PKG_CHECK_MODULES(libxml, libxml-2.0 >= 2.7.8)
+AC_CANONICAL_HOST
+
+AC_ARG_WITH(
+    [libcrypto],
+    [AS_HELP_STRING([--with-libcrypto], [build with libcrypto (default for non-Mac)])],
+    [],
+    [
+        case "${host_os}" in
+            darwin*)
+                with_libcrypto=no
+                ;;
+            *)
+                with_libcrypto=yes
+                ;;
+        esac
+    ]
+)
+
 PKG_CHECK_MODULES(libplist, libplist >= 1.0)
-PKG_CHECK_MODULES(libplistmm, libplist++ >= 1.0)
 PKG_CHECK_MODULES(libcurl, libcurl >= 1.0)
-PKG_CHECK_MODULES(libpartialzip, libpartialzip-1.0 >= 1.0)
-PKG_CHECK_MODULES(libcrypto, libcrypto >= 1.0)
+PKG_CHECK_MODULES(libfragmentzip, libfragmentzip >= 1.0)
+AS_IF([test "x$with_libcrypto" != xno],
+    [PKG_CHECK_MODULES(libcrypto, libcrypto >= 1.0)]
+)
+PKG_CHECK_MODULES(libirecovery, libirecovery >= 0.2.0)
 
 
 # Checks for header files.
@@ -37,6 +59,16 @@ AC_FUNC_ERROR_AT_LINE
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([memset mkdir pow strchr strdup strstr])
+
+case $CFLAGS in
+  *TSSCHECKER_NOMAIN*)
+    nomain=true
+  ;;
+  *)
+  ;;
+esac
+
+AM_CONDITIONAL(NOMAIN, test x$nomain == xtrue)
 
 AC_CONFIG_FILES([Makefile tsschecker/Makefile])
 AC_OUTPUT
